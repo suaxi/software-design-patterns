@@ -1,4 +1,4 @@
-package com.sw.设计原则;
+package com.sw.设计原则.开闭原则;
 
 /**
  * @author Wang Hao
