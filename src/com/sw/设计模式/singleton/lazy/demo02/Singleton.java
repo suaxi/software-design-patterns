@@ -1,4 +1,4 @@
-package com.sw.设计模式.singleton.hungry.demo04;
+package com.sw.设计模式.singleton.lazy.demo02;
 
 /**
  * @author Wang Hao

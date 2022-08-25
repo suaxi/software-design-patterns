@@ -1,8 +1,8 @@
-package com.sw.设计模式.singleton.hungry.demo04;
+package com.sw.设计模式.singleton.lazy.demo03;
 
 /**
  * @author Wang Hao
- * @date 2022/8/24 22:24
+ * @date 2022/8/24 22:36
  */
 public class Client {
     public static void main(String[] args) {
