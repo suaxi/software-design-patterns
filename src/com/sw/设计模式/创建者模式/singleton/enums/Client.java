@@ -1,4 +1,4 @@
-package com.sw.设计模式.singleton.enums;
+package com.sw.设计模式.创建者模式.singleton.enums;
 
 /**
  * @author Wang Hao

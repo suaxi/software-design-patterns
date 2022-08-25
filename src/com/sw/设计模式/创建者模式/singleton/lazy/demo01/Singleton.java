@@ -1,4 +1,4 @@
-package com.sw.设计模式.singleton.lazy.demo01;
+package com.sw.设计模式.创建者模式.singleton.lazy.demo01;
 
 /**
  * @author Wang Hao

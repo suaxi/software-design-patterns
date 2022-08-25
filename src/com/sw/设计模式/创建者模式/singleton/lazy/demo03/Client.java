@@ -1,15 +1,14 @@
-package com.sw.设计模式.singleton.hungry.demo02;
+package com.sw.设计模式.创建者模式.singleton.lazy.demo03;
 
 /**
  * @author Wang Hao
- * @date 2022/8/24 21:58
+ * @date 2022/8/24 22:36
  */
 public class Client {
     public static void main(String[] args) {
         Singleton instance = Singleton.getInstance();
         Singleton instance1 = Singleton.getInstance();
 
-        //true
         System.out.println(instance == instance1);
     }
 }
