@@ -186,3 +186,67 @@
 + 序列化和反序列化 - 在单例类中添加 `readResolve()` 方法，在反序列化时，如果类中定义了这个方法，就返回这个方法的值，反之则创建新的对象
 + 反射 - 在单例类的构造方法中通过标志位来判断是否是第一次访问，且在该构造方法中需要加  `synchronized` 锁，锁该类 `synchronized(Singleton.class)`
 
+
+
+#### 2. 工厂模式
+
+（1）概述
+
+以咖啡店点餐系统为例：
+
+![7.1工厂模式](static/设计原则/7.1工厂模式.png)
+
+当需要添加不同类型的咖啡的时候，需要修改原有的代码，违背了开闭原则，此时如果使用工厂来生产不同类型的咖啡，则只需要与工厂产生对接，工厂模式的最大优点即**解耦**
+
+
+
+（2）简单工厂模式
+
+*简单工厂模式不属于GOF的23种经典设计模式，其更像是一种编程习惯*
+
+
+
+> 结构
+
++ 抽象产品：定义产品的规范，描述产品的主要特性和功能
+
++ 具体产品：实现或继承抽象产品的子类
++ 具体工厂：提供创建产品的方法，调用者通过该方法来获取产品
+
+
+
+> 实现
+
+![7.2简单工厂模式](static/设计原则/7.2简单工厂模式.png)
+
+工厂处理创建对象的细节，一旦有了 `SimpleCoffeeFactory` 工厂类，`CoffeeStore` 类中的 `orderCoffee()` 就变成此对象的客户，后期如果需要 `Coffee` 对象直接从工厂获取即可，解除了和 `Cooffee` 实现类的耦合，但同时又产生了新的耦合：`CoffeeStore` 对象与 `SimpleCoffeeFactory` 工厂对象，`SimpleCoffeeFactory` 工厂对象 与 生产的商品对象
+
+
+
+> 优缺点
+
++ 封装了创建对象的过程，可以通过参数直接获取对象，把对象的创建与业务逻辑分开，避免了修改客户端代码，如果要添加新的产品则直接修改工厂类
++ 增加新产品时需要修改原有的工厂类，违背了**开闭原则**
+
+
+
+> 扩展（静态工厂）
+
+```java
+public class SimpleCoffeeFactory {
+
+    public static Coffee createCoffee(String type) {
+        //声明coffee类型的变量，根据不同类型创建不同的coffee子类
+        Coffee coffee = null;
+        if ("american".equals(type)) {
+            coffee = new AmericanCoffee();
+        } else if ("latte".equals(type)) {
+            coffee = new LatteCoffee();
+        } else {
+            throw new RuntimeException("该类型的咖啡暂未上架");
+        }
+        return coffee;
+    }
+}
+```
+
