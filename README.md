@@ -335,3 +335,82 @@ public class SimpleCoffeeFactory {
 + 当需要创建的对象是一系列相互关联或相互依赖的产品族时，如生产厂商的电视机、洗衣机、空调等
 + 系统中有多个产品族，但每次只使用其中的一个产品族，如某人只喜欢某一品牌的服装
 + 系统中提供了产品的类库，且所有产品的接口相同，客户端不依赖产品实例的创建细节和内部结构，如输入法更换皮肤
+
+
+
+##### （4）模式扩展
+
+**简单工厂 + 配置文件解耦**
+
+在工厂类中加载配置文件的全类名，并创建对象进行存储，客户端如果需要对象，直接获取即可
+
+a. 定义配置文件
+
+`bean.properties`
+
+```properties
+american=com.sw.设计模式.创建者模式.factory.configFactory.AmericanCoffee
+latte=com.sw.设计模式.创建者模式.factory.configFactory.LatteCoffee
+```
+
+b. 改进工厂类
+
+```java
+public class CoffeeFactory {
+
+    //加载配置文件，获取配置文件中配置的全类名，并创建该类的对象进行存储
+    //1.定义容器对象存储咖啡
+    private static HashMap<String, Coffee> map = new HashMap<>();
+
+    //2.加载配置文件
+    static {
+        //创建properties对象
+        Properties p = new Properties();
+        //调用load()方法进行加载
+        InputStream is = CoffeeFactory.class.getClassLoader().getResourceAsStream("bean.properties");
+        try {
+            p.load(is);
+            //从p集合中获取全类名并创建对象
+            for (Object key : p.keySet()) {
+                String className = p.getProperty((String) key);
+                Class<?> clazz = Class.forName(className);
+                Coffee coffee = (Coffee) clazz.newInstance();
+                //存储
+                map.put((String) key, coffee);
+            }
+        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    /**
+     * 根据名称获取对象
+     *
+     * @param name 名称
+     * @return
+     */
+    public static Coffee createCoffee(String name) {
+        return map.get(name);
+    }
+}
+```
+
+使用静态成员变量来存储创建的对象，在静态代码块中读取配置文件并创建对象
+
+```java
+public class Client {
+    public static void main(String[] args) {
+        Coffee coffee = CoffeeFactory.createCoffee("american");
+        //美式咖啡
+        System.out.println(coffee.getName());
+
+        System.out.println("=============================");
+
+        Coffee coffee1 = CoffeeFactory.createCoffee("latte");
+        //拿铁咖啡
+        System.out.println(coffee1.getName());
+    }
+}
+```
+
