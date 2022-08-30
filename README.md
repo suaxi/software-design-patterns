@@ -414,3 +414,152 @@ public class Client {
 }
 ```
 
+
+
+#### 3. 原型模式
+
+##### （1）概述
+
+用一个已经创建的实例作为原型，通过复制该原型对象来创建一个和原型对象相同的新对象
+
+
+
+##### （2）结构
+
++ 抽象原型类：规定了具体原型对象必须实现的 `clone()` 方法
+
++ 具体原型类：实现抽象原型类的 `clone()` 方法，它是可被复制的对象
+
++ 访问类：使用具体原型类中的 `clone()` 方法来复制新的对象
+
+接口类图：
+
+![1.5原型模式](static/设计模式/创建者模式/1.5原型模式.png)
+
+
+
+##### （3）实现
+
+原型模式的克隆分为**浅克隆**和**深克隆**：
+
++ 浅克隆：创建一个新对象，新对象的属性和原来对象完全相同，对于非基本类型，仍指向原有属性所指向的对象的内存地址
++ 深克隆：创建一个新对象，属性中引用的其他对象也会被克隆，且不再指向原有对象地址
+
+Java中 `Object` 类提供了 `clone()` 方法来实现浅克隆，`Cloneable` 接口是上面类图中的抽象原型类，而实现了 `Cloneable` 接口的子实现类就是具体的原型类。
+
+**原型类**
+
+```java
+public class Realizetype implements Cloneable {
+
+    public Realizetype() {
+        System.out.println("具体原型对象创建完成");
+    }
+
+    @Override
+    public Realizetype clone() throws CloneNotSupportedException {
+        System.out.println("具体原型复制成功");
+        return (Realizetype) super.clone();
+    }
+}
+```
+
+**测试**
+
+```java
+public class Client {
+    public static void main(String[] args) throws CloneNotSupportedException {
+        //创建原型对象
+        Realizetype realizetype = new Realizetype();
+        //调用clone方法进行对象的克隆
+        Realizetype realizetype1 = realizetype.clone();
+
+        //具体原型对象创建完成
+        //具体原型复制成功
+        //false
+        System.out.println(realizetype == realizetype1);
+    }
+}
+```
+
+
+
+##### （4）案例
+
+以学校发放“三好学生”奖状为例
+
+![1.6原型模式（奖状案例）](static/设计模式/创建者模式/1.6原型模式（奖状案例）.png)
+
+
+
+##### （5）使用场景
+
++ 对象的创建非常复杂
++ 性能和安全要求较高
+
+
+
+##### （6）深克隆
+
+将奖状案例中的 `name` 属性修改为 `Student` 复杂对象属性
+
+```java
+public class CitationTest {
+    public static void main(String[] args) throws CloneNotSupportedException {
+        //创建原型对象
+        Citation citation = new Citation();
+
+        //创建学生
+        Student student = new Student();
+        student.setName("孙笑川");
+        citation.setStudent(student);
+
+        //复制奖状
+        Citation citation1 = citation.clone();
+        citation1.getStudent().setName("药水哥");
+
+        //展示奖状
+        citation.show();
+        citation1.show();
+
+        //药水哥同学，在本学年表现优秀，被评为“三好学生”，特发此状，以资鼓励！
+        //药水哥同学，在本学年表现优秀，被评为“三好学生”，特发此状，以资鼓励！
+    }
+}
+```
+
+存在的问题：使用浅克隆时，克隆出来的对象属性中的 `student1` 和第一次创建的 `student` 是同一个对象，此时 `setName` 方法设置的值是同一个
+
+改进：（使用对象流）
+
+```java
+public class CitationTest {
+    public static void main(String[] args) throws Exception {
+        //创建原型对象
+        Citation citation = new Citation();
+
+        //创建学生
+        Student student = new Student();
+        student.setName("孙笑川");
+        citation.setStudent(student);
+
+        //创建对象输出流
+        ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(Paths.get("D:/citation.txt")));
+        //写对象
+        oos.writeObject(citation);
+        //释放资源
+        oos.close();
+
+        //创建对象
+        ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(Paths.get("D:/citation.txt")));
+        Citation citation1 = (Citation) ois.readObject();
+        ois.close();
+
+        citation1.getStudent().setName("药水哥");
+
+        citation.show();
+        citation1.show();
+    }
+}
+```
+
