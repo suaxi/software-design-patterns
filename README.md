@@ -563,3 +563,145 @@ public class CitationTest {
 }
 ```
 
+
+
+#### 4. 建造者模式
+
+##### （1）概述
+
+将一个复杂对象的构建与表示分离，使得同样的构建过程可以创建不同的表示
+
+
+
+##### （2）结构
+
++ 抽象建造者类（Builder）：该接口规定要实现复杂对象的哪些部分的创建，并不涉及具体部件的创建
++ 具体建造者类（ConcreteBuilder）：实现 `Builder` 接口，完成复杂对象的各个部件的具体创建方法，在构造过程完成后，提供产品的实例
++ 产品类（Product）：要创建的复杂对象
++ 指导者类（Director）：调用具体建造者来创建复杂对象的各个部分，在指导者中不涉及具体产品的信息，只负责保证对象各部分完整创建或按某种顺序创建
+
+![1.7建造者模式](static/设计模式/创建者模式/1.7建造者模式.png)
+
+
+
+##### （3）实例
+
+以生产单车为例
+
+![1.8建造者模式（生产单车案例）](static/设计模式/创建者模式/1.8建造者模式（生产单车案例）.png)
+
+以上实例可以将**指导者**和**抽象建造者**结合，这样做可以简化系统复杂度，但**不符合单一职责原则**
+
+```java
+public abstract class Builder {
+
+    protected Bike bike = new Bike();
+
+    /**
+     * 生产车架
+     */
+    public abstract void buildFrame();
+
+    /**
+     * 生产车座
+     */
+    public abstract void buildSeat();
+
+    /**
+     * 生产自行车
+     *
+     * @return
+     */
+    public abstract Bike createBike();
+    
+    public Bike construct() {
+        this.buildFrame();
+        this.buildSeat();
+        return this.createBike();
+    }
+}
+```
+
+
+
+##### （5）优缺点
+
++ 封装性好，建造者模式可以有效的封装变化，在该过程中，产品类与建造者类相对稳定，将复杂的业务逻辑封装在指导者类中对整体而言有较好的稳定性
++ 在建造者模式中，客户端无需关心产品内部组成的细节，将产品本身与创建的过程解耦，使得相同的创建过程可以建造不同的产品
++ 可以更细粒度的控制产品的创建过程，即将复杂对象的创建步骤分解在不同的方法中，可以使创建过程更加清晰，也可以更好的控制创建过程
++ 易扩展，当有同类产品的新的需求时，新增一个建造者就可以完成，符合开闭原则
++ 建造者模式所创建的产品一般来说有较多的相同点，其组成部分相似，如果产品之间差异较大，则不适合使用建造者模式，使其适用范围受限
+
+
+
+##### （6）使用场景
+
++ 创建的对象较复杂，有多个部件构成，各部件面临着复杂的变化，但构件间的建造顺序是稳定的
++ 创建复杂对象的算法独立于该对象的组成部分以及它们的装配方式，即产品的构建过程和最终的表示是独立的
+
+
+
+##### （7）扩展
+
+当一个类的构造器需要传入很多参数时，如果创建该类的实例，可能导致代码可读性差和引入新的错误，此时可以使用建造者模式进行重构
+
+```java
+public class Phone {
+
+    private String cpu;
+    private String screen;
+    private String memory;
+    private String mainBoard;
+
+    //私有构造器
+    private Phone(Builder builder) {
+        this.cpu = builder.cpu;
+        this.screen = builder.screen;
+        this.memory = builder.memory;
+        this.mainBoard = builder.mainBoard;
+    }
+
+    public static final class Builder {
+        private String cpu;
+        private String screen;
+        private String memory;
+        private String mainBoard;
+
+        public Builder cpu(String cpu) {
+            this.cpu = cpu;
+            return this;
+        }
+
+        public Builder screen(String screen) {
+            this.screen = screen;
+            return this;
+        }
+
+        public Builder memory(String memory) {
+            this.memory = memory;
+            return this;
+        }
+
+        public Builder mainBoard(String mainBoard) {
+            this.mainBoard = mainBoard;
+            return this;
+        }
+
+        //使用建造者创建Phone对象
+        public Phone build() {
+            return new Phone(this);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Phone{" +
+                "cpu='" + cpu + '\'' +
+                ", screen='" + screen + '\'' +
+                ", memory='" + memory + '\'' +
+                ", mainBoard='" + mainBoard + '\'' +
+                '}';
+    }
+}
+```
+
