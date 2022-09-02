@@ -17,7 +17,7 @@ public class ProxyFactory implements MethodInterceptor {
     /**
      * 声明火车站对象
      */
-    private final TrainStation trainStation = new TrainStation();
+    private TrainStation trainStation = new TrainStation();
 
     public TrainStation getProxyObject() {
         //创建Enhancer对象（类似于JDK代理中的Proxy）
