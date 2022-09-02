@@ -844,3 +844,10 @@ public final class $Proxy0 extends Proxy implements SellTickets {
   + 根据多态的特性，执行的代理类是 `$Proxy0` 中的 `sell()` 方法
   + 代理类 `$Proxy0` 中的 `sell()` 方法中又调用了 `invocationHandler` 接口的子实现类对象的 `invoke()` 方法
   + `invoke` 方法通过反射执行了真实对象所属类 `TrainStation` 中的 `sell()` 方法
+
+
+
+##### （5）CGLib动态代理
+
+如果没有定义 `SellTickets` 接口，只定义了 `TrainStation` 火车站类，此时无法使用JDK动态代理，因为它要求必须定义接口
+
