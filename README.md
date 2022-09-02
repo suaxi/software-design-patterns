@@ -1,5 +1,9 @@
 ## 软件设计模式
 
+*参考于it黑马*
+
+
+
 ### 一、分类
 
 + 创建型模式：用于描述“怎样创建对象”，特点：将对象的创建与使用分离，包含：单例、原型、工厂、抽象工厂、建造者等5种；
@@ -742,3 +746,101 @@ Java中的代理按照类生成时机的不同分为**静态代理**和**动态�
 ##### （4）JDk动态代理
 
 Java中提供了一个动态代理类 `Proxy` ，即提供了一个创建代理对象的静态方法 `newProxyInstance` 来获取代理对象
+
+使用`Arthas` （阿尔萨斯）查看代理类的结构：
+
+```java
+package com.sun.proxy;
+
+import com.itheima.proxy.dynamic.jdk.SellTickets;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.UndeclaredThrowableException;
+
+public final class $Proxy0 extends Proxy implements SellTickets {
+    private static Method m1;
+    private static Method m2;
+    private static Method m3;
+    private static Method m0;
+
+    public $Proxy0(InvocationHandler invocationHandler) {
+        super(invocationHandler);
+    }
+
+    static {
+        try {
+            m1 = Class.forName("java.lang.Object").getMethod("equals", Class.forName("java.lang.Object"));
+            m2 = Class.forName("java.lang.Object").getMethod("toString", new Class[0]);
+            m3 = Class.forName("com.itheima.proxy.dynamic.jdk.SellTickets").getMethod("sell", new Class[0]);
+            m0 = Class.forName("java.lang.Object").getMethod("hashCode", new Class[0]);
+            return;
+        }
+        catch (NoSuchMethodException noSuchMethodException) {
+            throw new NoSuchMethodError(noSuchMethodException.getMessage());
+        }
+        catch (ClassNotFoundException classNotFoundException) {
+            throw new NoClassDefFoundError(classNotFoundException.getMessage());
+        }
+    }
+
+    public final boolean equals(Object object) {
+        try {
+            return (Boolean)this.h.invoke(this, m1, new Object[]{object});
+        }
+        catch (Error | RuntimeException throwable) {
+            throw throwable;
+        }
+        catch (Throwable throwable) {
+            throw new UndeclaredThrowableException(throwable);
+        }
+    }
+
+    public final String toString() {
+        try {
+            return (String)this.h.invoke(this, m2, null);
+        }
+        catch (Error | RuntimeException throwable) {
+            throw throwable;
+        }
+        catch (Throwable throwable) {
+            throw new UndeclaredThrowableException(throwable);
+        }
+    }
+
+    public final int hashCode() {
+        try {
+            return (Integer)this.h.invoke(this, m0, null);
+        }
+        catch (Error | RuntimeException throwable) {
+            throw throwable;
+        }
+        catch (Throwable throwable) {
+            throw new UndeclaredThrowableException(throwable);
+        }
+    }
+
+    public final void sell() {
+        try {
+            this.h.invoke(this, m3, null);
+            return;
+        }
+        catch (Error | RuntimeException throwable) {
+            throw throwable;
+        }
+        catch (Throwable throwable) {
+            throw new UndeclaredThrowableException(throwable);
+        }
+    }
+}
+```
+
+从以上类结构可以看出：
+
++ 代理类 `$Proxy0` 实现了 `SellTickets`，即真实类和代理类都实现了同样的接口
++ 代理类 `$Proxy0` 将我们提供了的匿名内部类 `invocationHandler` 传递给了父类
++ 动态代理执行流程：
+  + 在测试类（访问类）中通过代理对象调用 `sell()` 方法
+  + 根据多态的特性，执行的代理类是 `$Proxy0` 中的 `sell()` 方法
+  + 代理类 `$Proxy0` 中的 `sell()` 方法中又调用了 `invocationHandler` 接口的子实现类对象的 `invoke()` 方法
+  + `invoke` 方法通过反射执行了真实对象所属类 `TrainStation` 中的 `sell()` 方法
