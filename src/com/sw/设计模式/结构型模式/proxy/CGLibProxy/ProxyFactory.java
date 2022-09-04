@@ -1,6 +1,5 @@
 package com.sw.设计模式.结构型模式.proxy.CGLibProxy;
 
-import com.sw.设计模式.结构型模式.proxy.staticProxy.TrainStation;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;

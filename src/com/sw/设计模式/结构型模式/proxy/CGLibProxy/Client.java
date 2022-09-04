@@ -1,7 +1,5 @@
 package com.sw.设计模式.结构型模式.proxy.CGLibProxy;
 
-import com.sw.设计模式.结构型模式.proxy.staticProxy.TrainStation;
-
 /**
  * @author Wang Hao
  * @date 2022/9/2 23:39
