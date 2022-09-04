@@ -1,7 +1,5 @@
 package com.sw.设计模式.结构型模式.adapter.objectAdapter;
 
-import com.sw.设计模式.结构型模式.adapter.classAdapter.TFCardImpl;
-
 /**
  * @author Wang Hao
  * @date 2022/9/4 11:34
