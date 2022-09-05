@@ -14,12 +14,12 @@ public class Bacon extends Garnish {
     @Override
     public float cost() {
         //价格：培根 + 快餐的价格
-        return super.getPrice() + super.getFastFood().cost();
+        return getPrice() + getFastFood().cost();
     }
 
     @Override
     public String getDesc() {
         //描述：培根 + 具体的快餐
-        return super.getDesc() + super.getFastFood().getDesc();
+        return getDesc() + getFastFood().getDesc();
     }
 }
