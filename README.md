@@ -1527,3 +1527,217 @@ public final class $Proxy0 extends Proxy implements SellTickets {
 + 当需要为聚合对象提供多种遍历方式时
 + 当需要为遍历不同的聚合结构提供一个统一的接口时
 + 当需要访问一个聚合对象的内容而无需暴露其内部细节时
+
+
+
+#### 9. 访问者模式
+
+##### （1）概述
+
+封装一些作用于某种数据结构中的各元素的操作，它可以在不改变这个数据结构的前提下定义作用于这些元素的新的操作
+
+
+
+##### （2）结构
+
++ 抽象访问者角色：定义对每一个元素访问的行为，它的参数就是可以访问的元素（它的方法个数理论上来说与元素个数相等）
++ 具体访问者角色：给出对每一个元素类访问时所产生的具体行为
++ 抽象元素角色：定义接受访问者的方法（即每一个元素都可以被访问者访问）
++ 具体元素角色：提供接受访问方法的具体实现，而这个具体的实现，通常情况下是使用访问者提供的访问该元素类的方法
++ 对象结构角色：一个具有容器性质或复合对象特性的类，它含有一组元素，且可以迭代这些元素，供访问者访问
+
+
+
+##### （3）案例
+
+以宠物喂食为例
+
++ 访问者角色：给宠物喂食的人
++ 具体访问者角色：宠物主人、其他人等
++ 抽象元素角色：动物抽象类
++ 具体元素角色：宠物狗、宠物猫
++ 结构对象角色：主人家
+
+![9.访问者模式（喂宠物案例）](static/设计模式/行为型模式/9.访问者模式（喂宠物案例）.png)
+
+
+
+##### （4）优缺点
+
++ 扩展性好：在不修改对象结构中的元素的情况下，为对象结构中的元素添加新的功能
++ 复用性好：通过访问者来定义整个对象结构的通用的功能，从而提高代码复用
++ 分离无关行为：通过访问者来分离无关的行为，把相关的行为封装在一起，构成一个访问者，使得每一个访问者的功能都比较单一
++ 对象结构变化困难：每增加一个新的元素类，都要在每一个具体访问者中增加相应的具体操作，违背了开闭原则
++ 违反了依赖倒置原则：访问者依赖具体类，而不依赖抽象类
+
+
+
+##### （5）使用场景
+
++ 对象结构稳定，但其操作算法经常变更时
++ 对象结构中对象需要提供多种不同且不相关的操作，而且要避免让这些操作的变化影响对象的结构时
+
+
+
+##### （6）扩展
+
+*访问者模式使用了双分派技术*
+
+**1. 分派**
+
+变量被声明时的类型叫做变量的静态类型，变量所引用的对象的真实类型叫实际类型 `Map map = new HashMap()`
+
++ 静态分派：发生在编译时期，分派根据静态类型信息发生，如：方法重载
++ 动态分派：发生在运行时期，动态分派动态地置换掉某个方法，如：方法重写
+
+
+
+**2. 动态分派**
+
+```java
+public class Animal {
+    
+    public void execute() {
+        System.out.println("Animal");
+    }
+}
+
+public class Dog extends Animal {
+    
+    @Override
+    public void execute() {
+        System.out.println("Dog");
+    }
+}
+
+public class Cat extends Animal {
+    
+    @Override
+    public void execute() {
+        System.out.println("Cat");
+    }
+}
+
+public class Client {
+    public static void main(String[] args) {
+        Animal a = new Dog();
+        a.execute();
+        
+        Animal a1 = new Cat();
+        a1.execute();
+    }
+}
+```
+
+Java编译器在编译时期并不总是知道哪些代码会被执行，因为编译器仅仅知道对象的静态类型，而方法的调用则是根据对象的真实类型
+
+
+
+**3. 静态分派**
+
+```java
+public class Animal {
+
+}
+
+public class Dog extends Animal {
+
+}
+
+public class Cat extends Animal {
+
+}
+
+public class Execute() {
+    
+    public void print(Animal a) {
+        System.out.println("Animal");
+    }
+
+    public void print(Dog d) {
+        System.out.println("Dog");
+    }
+
+    public void print(Cat c) {
+        System.out.println("Cat");
+    }
+}
+
+public class Client {
+    public static void main(String[] args) {
+        Animal a = new Animal();
+        Animal d = new Dog();
+        Animal c = new Cat();
+        
+        Execute execute = new Execute();
+        execute.print(a); //Animal
+        execute.print(d); //Animal
+        execute.print(c); //Animal
+    }
+}
+```
+
+重载是根据方法的静态类型进行的，该分派过程在编译期完成，所以打印结果都是 `Animal`
+
+
+
+**4. 双分派**
+
+双分派在选择一个方法的时候，不仅要根据消息接收者的运行时区别，还要根据参数的运行时区别
+
+```java
+public class Animal {
+    
+    public void accept(Execute execute) {
+        execute.print(this);
+    }
+}
+
+public class Dog extends Animal {
+    
+    @Override
+    public void accept(Execute execute) {
+        execute.print(this);
+    }
+}
+
+public class Cat extends Animal {
+    
+    @Override
+    public void accept(Execute execute) {
+        execute.print(this);
+    }
+}
+
+public class Execute() {
+    
+    public void print(Animal a) {
+        System.out.println("Animal");
+    }
+
+    public void print(Dog d) {
+        System.out.println("Dog");
+    }
+
+    public void print(Cat c) {
+        System.out.println("Cat");
+    }
+}
+
+public class Client {
+    public static void main(String[] args) {
+        Animal a = new Animal();
+        Animal d = new Dog();
+        Animal c = new Cat();
+        
+        Execute execute = new Execute();
+        a.accept(execute); //Animal
+        d.accept(execute); //Dog
+        c.accept(execute); //Cat
+    }
+}
+```
+
+客户端将 `Execute` 作为参数传递给 `Animal` 类型的变量调用的方法，这里通过**方法重写**完成了第一次分派（动态分派），同时也将自己 `this` 作为参数传递到 `Execute.print()` 方法中，这里通过**方法重载**完成了第二次分派（静态分派）
+
+**双分派实现动态绑定的本质就是在重载委派之前加上继承体系中的重写**
