@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+
+    <bean id="userMapper" class="com.spring.mapper.impl.UserMapperImpl">
+        <property name="name" value="孙笑川"/>
+        <property name="password" value="123456"/>
+    </bean>
+
+    <bean id="userService" class="com.spring.service.impl.UserServiceImpl">
+        <property name="userMapper" ref="userMapper"/>
+    </bean>
+</beans>
