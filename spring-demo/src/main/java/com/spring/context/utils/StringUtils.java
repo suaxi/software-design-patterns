@@ -15,7 +15,7 @@ public class StringUtils {
      * @param fieldName
      * @return
      */
-    public static String getSetMethodByFieldName(String fieldName) {
+    public static String getSetMethodNameByFieldName(String fieldName) {
         return "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
     }
 }

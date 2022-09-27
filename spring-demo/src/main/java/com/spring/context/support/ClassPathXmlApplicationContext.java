@@ -54,7 +54,7 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
                 //获取依赖的bean对象
                 Object bean = getBean(ref);
                 //拼接方法名
-                String methodName = StringUtils.getSetMethodByFieldName(propertyName);
+                String methodName = StringUtils.getSetMethodNameByFieldName(propertyName);
                 Method[] methods = clazz.getMethods();
                 for (Method method : methods) {
                     if (method.getName().equals(methodName)) {
@@ -64,8 +64,8 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
 
             }
             if (value != null && !"".equals(value)) {
-                String methodName = StringUtils.getSetMethodByFieldName(propertyName);
-                Method method = clazz.getDeclaredMethod(methodName, StringUtils.class);
+                String methodName = StringUtils.getSetMethodNameByFieldName(propertyName);
+                Method method = clazz.getMethod(methodName, String.class);
                 method.invoke(beanObj, value);
             }
         }
