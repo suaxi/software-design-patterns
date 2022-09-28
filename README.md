@@ -1860,3 +1860,642 @@ value ::= integer
 + 增加新的解释表达式较为方便：在需要扩展时只需增加一个对应的终结符/非终结符表达式类，符合开闭原则
 + 复杂文法难以维护：在该模式中，每一条规则至少需要定义一个类，类的个数会随着文法规则的增加而增加
 + 执行效率低：该模式使用了大量的循环和递归调用，在解释较为复杂的句子时存在性能问题（变量类型重写抽象表达式的解释（解析）方法，直接获取对应 `key` 的值，非终结符表达式先调用其他表达式父类的解释（解析）方法，然后才到自身这边）
+
+
+
+### 六、自定义spring-context demo
+
+applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans>
+
+    <bean id="userMapper" class="com.spring.mapper.impl.UserMapperImpl">
+        <property name="name" value="孙笑川"/>
+        <property name="password" value="123456"/>
+    </bean>
+
+    <bean id="userService" class="com.spring.service.impl.UserServiceImpl">
+        <property name="userMapper" ref="userMapper"/>
+    </bean>
+</beans>
+```
+
+
+
+#### 1. pojo
+
+##### （1）PropertyValue类
+
+用于封装bean的属性
+
+```java
+public class PropertyValue {
+
+    /**
+     * name
+     */
+    private String name;
+
+    /**
+     * ref
+     */
+    private String ref;
+
+    /**
+     * value:给基本数据类型及String类型赋的值
+     */
+    private String value;
+
+    public PropertyValue() {
+    }
+
+    public PropertyValue(String name, String ref, String value) {
+        this.name = name;
+        this.ref = ref;
+        this.value = value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+}
+```
+
+
+
+##### （2）MutablePropertyValues类
+
+一个`bean`标签可以有多个 `property` 子标签，该类用于存储并管理多个 `Propertyvalue` 对象
+
+```java
+public class MutablePropertyValues implements Iterable<PropertyValue> {
+
+    private final List<PropertyValue> propertyValueList;
+
+    public MutablePropertyValues() {
+        this.propertyValueList = new ArrayList<>();
+    }
+
+    public MutablePropertyValues(List<PropertyValue> propertyValueList) {
+        if (propertyValueList == null) {
+            this.propertyValueList = new ArrayList<>();
+        } else {
+            this.propertyValueList = propertyValueList;
+        }
+    }
+
+    /**
+     * 获取PropertyValue数组
+     *
+     * @return
+     */
+    public PropertyValue[] getPropertyValues() {
+        return propertyValueList.toArray(new PropertyValue[0]);
+    }
+
+    /**
+     * 根据名称获取PropertyValue对象
+     *
+     * @param propertyName
+     * @return
+     */
+    public PropertyValue getPropertyValueByName(String propertyName) {
+        for (PropertyValue propertyValue : propertyValueList) {
+            if (propertyValue.getName().equals(propertyValue)) {
+                return propertyValue;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 判断集合是否为空
+     *
+     * @return
+     */
+    public boolean isEmpty() {
+        return propertyValueList.isEmpty();
+    }
+
+    /**
+     * 添加
+     *
+     * @param propertyValue
+     * @return
+     */
+    public MutablePropertyValues addPropertyValue(PropertyValue propertyValue) {
+        for (int i = 0; i < propertyValueList.size(); i++) {
+            PropertyValue currentPropertyValue = this.propertyValueList.get(i);
+            if (currentPropertyValue.getName().equals(propertyValue.getName())) {
+                propertyValueList.set(i, new PropertyValue(propertyValue.getName(), propertyValue.getRef(), propertyValue.getValue()));
+                return this;
+            }
+        }
+        this.propertyValueList.add(propertyValue);
+        return this;
+    }
+
+    /**
+     * 判断是否包含指定名称的PropertyValue对象
+     *
+     * @param propertyName
+     * @return
+     */
+    public boolean contains(String propertyName) {
+        return this.getPropertyValueByName(propertyName) != null;
+    }
+
+    /**
+     * 获取迭代器对象
+     *
+     * @return
+     */
+    @Override
+    public Iterator<PropertyValue> iterator() {
+        return propertyValueList.listIterator();
+    }
+}
+
+```
+
+
+
+##### （3）BeanDefinition
+
+`BeanDefinition` 用来封装 `bean` 的信息，主要包含`id`（`bean`对象的名称）、`class`（需交由 `spring` 管理的类的全路径类名）、子标签 `property` 数据
+
+```java
+public class BeanDefinition {
+
+    private String id;
+    private String className;
+    private MutablePropertyValues propertyValues;
+
+    public BeanDefinition() {
+        propertyValues = new MutablePropertyValues();
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public MutablePropertyValues getPropertyValues() {
+        return propertyValues;
+    }
+
+    public void setPropertyValues(MutablePropertyValues propertyValues) {
+        this.propertyValues = propertyValues;
+    }
+}
+```
+
+
+
+#### 2. 注册表
+
+##### （1）BeanDefinitionRegistry接口
+
++ 注册 `BeanDefinition` 对象到注册表中
+
++ 从注册表中删除指定名称的对象
+
++ 根据名称获取指定对象
+
++ 根据名称判断是否包含指定对象
+
++ 获取已注册 `bean` 的个数
+
++ 获取已注册 `bean` 的名称数组
+
+  ```java
+  public interface BeanDefinitionRegistry {
+  
+      /**
+       * 注册BeanDefinition对象到注册表中
+       *
+       * @param beanName
+       * @param beanDefinition
+       */
+      void registerBeanDefinition(String beanName, BeanDefinition beanDefinition);
+  
+      /**
+       * 从注册表中删除指定名称的对象
+       *
+       * @param beanName
+       */
+      void removeBeanDefinition(String beanName);
+  
+      /**
+       * 根据名称获取指定对象
+       *
+       * @param beanName
+       * @return
+       */
+      BeanDefinition getBeanDefinition(String beanName);
+  
+      /**
+       * 根据名称判断是否包含指定对象
+       *
+       * @param beanName
+       * @return
+       */
+      boolean containsBeanDefinition(String beanName);
+  
+      /**
+       * 获取已注册bean的个数
+       *
+       * @return
+       */
+      int getBeanDefinitionCount();
+  
+      /**
+       * 获取已注册bean的名称数组
+       *
+       * @return
+       */
+      String[] getBeanDefinitionNames();
+  }
+  ```
+
+
+
+##### （2）SimpleBeanDefinitionRegistry类
+
+该类实现了 `BeanDefinitionRegistry` 接口，并定义Map集合作为注册表容器
+
+  ```java
+public class SimpleBeanDefinitionRegistry implements BeanDefinitionRegistry {
+
+    /**
+     * BeanDefinition存储容器
+     */
+    private Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>();
+
+    @Override
+    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
+        beanDefinitionMap.put(beanName, beanDefinition);
+    }
+
+    @Override
+    public void removeBeanDefinition(String beanName) {
+        beanDefinitionMap.remove(beanName);
+    }
+
+    @Override
+    public BeanDefinition getBeanDefinition(String beanName) {
+        return beanDefinitionMap.get(beanName);
+    }
+
+    @Override
+    public boolean containsBeanDefinition(String beanName) {
+        return beanDefinitionMap.containsKey(beanName);
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
+    }
+
+    @Override
+    public String[] getBeanDefinitionNames() {
+        return beanDefinitionMap.keySet().toArray(new String[0]);
+    }
+}
+  ```
+
+
+#### 3. 解析器
+
+##### （1）BeanDefinitionReader接口
+
+用于解析配置文件并在注册表中注册bean的信息：
+
++ 获取注册表功能，让外界可以通过此对象获取注册表对象
++ 加载配置文件，并注册bean数据
+
+  ```java
+  public interface BeanDefinitionReader {
+  
+    /**
+     * 获取注册表对象
+     *
+     * @return
+     */
+    BeanDefinitionRegistry getRegistry();
+  
+    /**
+     * 加载配置文件并在注册表中注册
+     *
+     * @param configLocation
+     */
+    void loadBeanDefinitions(String configLocation) throws DocumentException;
+  }
+  ```
+
+
+
+##### （2）XmlBeanDefinitionReader类
+
+用于解析xml配置文件，该类实现了 `BeanDefinitionReader` 接口
+
+  ```java
+public class XmlBeanDefinitionReader implements BeanDefinitionReader {
+
+    /**
+     * 声明注册表对象
+     */
+    private BeanDefinitionRegistry registry;
+
+    public XmlBeanDefinitionReader() {
+        registry = new SimpleBeanDefinitionRegistry();
+    }
+
+    @Override
+    public BeanDefinitionRegistry getRegistry() {
+        return registry;
+    }
+
+    @Override
+    public void loadBeanDefinitions(String configLocation) throws DocumentException {
+        SAXReader reader = new SAXReader();
+        //获取类路径下的配置文件
+        InputStream is = XmlBeanDefinitionReader.class.getClassLoader().getResourceAsStream(configLocation);
+        Document document = reader.read(is);
+
+        //根标签
+        Element rootElement = document.getRootElement();
+        //根标签下的bean标签对象
+        List<Element> beanElementList = rootElement.elements();
+
+        for (Element beanElement : beanElementList) {
+            //id
+            String id = beanElement.attributeValue("id");
+
+            //class
+            String className = beanElement.attributeValue("class");
+
+            MutablePropertyValues propertyValues = new MutablePropertyValues();
+            //property
+            List<Element> propertyList = beanElement.elements("property");
+            for (Element propertyElement : propertyList) {
+                String name = propertyElement.attributeValue("name");
+                String ref = propertyElement.attributeValue("ref");
+                String value = propertyElement.attributeValue("value");
+                propertyValues.addPropertyValue(new PropertyValue(name, ref, value));
+            }
+
+            //封装
+            BeanDefinition beanDefinition = new BeanDefinition();
+            beanDefinition.setId(id);
+            beanDefinition.setClassName(className);
+            beanDefinition.setPropertyValues(propertyValues);
+
+            //将beanDefinition注册到注册表中
+            registry.registerBeanDefinition(id, beanDefinition);
+        }
+    }
+}
+  ```
+
+
+
+#### 4. IOC容器
+
+##### （1）BeanFactory接口
+
+在该接口中定义IOC容器的统一规范（即获取 `bean` 对象）
+
+  ```java
+public interface BeanFactory {
+
+    /**
+     * 根据名称获取bean
+     *
+     * @param name
+     * @return
+     */
+    Object getBean(String name) throws Exception;
+
+    /**
+     * 根据名称、class类获取bean
+     *
+     * @param name
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    <T> T getBean(String name, Class<? extends T> clazz) throws Exception;
+}
+  ```
+
+
+
+##### （2）ApplicationContext接口
+
+该接口的所有子实现类对 `bean` 对象的创建都是非延时的，所以在该接口中定义 `refresh()` 方法：
+
++ 加载配置文件
++ 根据注册表中的 `BeanDefinition` 对象封装的数据进行 `bean` 对象的创建
+
+```java
+public interface ApplicationContext extends BeanFactory {
+
+    /**
+     * 加载配置文件并创建对象
+     *
+     * @throws Exception
+     */
+    void refresh() throws Exception;
+}
+```
+
+
+
+##### （3）AbstractApplicationContext类
+
++ 作为 `ApplicationContext` 接口的子类，该类也是非延时加载，所以在该类中定义Map集合作为 `bean` 对象的存储容器
++ 声明 `BeanDefinitionReader` 类型的变量，进行xml配置文件解析； `BeanDefinitionReader` 类型的对象的创建交由子类实现（因为只有子类明确创建 `BeanDefinitionReader` 哪个子实现类对象）
+
+```java
+public abstract class AbstractApplicationContext implements ApplicationContext {
+
+    /**
+     * 声明解析器
+     */
+    protected BeanDefinitionReader beanDefinitionReader;
+
+    /**
+     * 存储bean的容器
+     */
+    protected Map<String, Object> singleObjects = new HashMap<>();
+
+    /**
+     * 配置文件路径
+     */
+    protected String configLocation;
+
+    @Override
+    public void refresh() throws Exception {
+        //加载BeanDefinition
+        beanDefinitionReader.loadBeanDefinitions(configLocation);
+        //初始化bean
+        this.finishBeanInitialization();
+    }
+
+    /**
+     * 初始化bean
+     */
+    private void finishBeanInitialization() throws Exception {
+        //获取注册表对象
+        BeanDefinitionRegistry registry = beanDefinitionReader.getRegistry();
+
+        //获取BeanDefinition
+        String[] beanNames = registry.getBeanDefinitionNames();
+        for (String beanName : beanNames) {
+            //执行初始化
+            getBean(beanName);
+        }
+    }
+}
+```
+
+注：`finishBeanInitialization()` 方法中的 `getBean()` 使用了模板方法
+
+
+
+##### （4）ClassPathXmlApplicationContext类
+
+该类主要功能是加载类路径下的配置文件，并创建 `bean` 对象：
+
++ 在构造方法中，创建 `BeanDefinitionReader` 对象
++ 在构造方法中，调用 `refresh()` 方法，用于加载配置文件、创建 `bean` 对象并存储到容器中
++ 重写父接口中的 `getBean()` 方法，并实现依赖注入
+
+```java
+public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
+
+    public ClassPathXmlApplicationContext(String configLocation) {
+        this.configLocation = configLocation;
+        //构建解析器
+        beanDefinitionReader = new XmlBeanDefinitionReader();
+        try {
+            this.refresh();
+        } catch (Exception e) {
+
+        }
+    }
+
+    @Override
+    public Object getBean(String name) throws Exception {
+        //判断对象容器中是否包含指定名称的容器对象，如果有则直接返回，反之进行创建
+        Object obj = singleObjects.get(name);
+        if (obj != null) {
+            return obj;
+        }
+
+        //获取BeanDefinition
+        BeanDefinitionRegistry registry = beanDefinitionReader.getRegistry();
+        BeanDefinition beanDefinition = registry.getBeanDefinition(name);
+
+        //根据bean标签数据中的类名反射创建对象
+        Class<?> clazz = Class.forName(beanDefinition.getClassName());
+        Object beanObj = clazz.newInstance();
+
+        //执行依赖注入
+        for (PropertyValue propertyValue : beanDefinition.getPropertyValues()) {
+            //name
+            String propertyName = propertyValue.getName();
+            //value
+            String value = propertyValue.getValue();
+            //ref
+            String ref = propertyValue.getRef();
+            if (ref != null && !"".equals(ref)) {
+                //获取依赖的bean对象
+                Object bean = getBean(ref);
+                //拼接方法名
+                String methodName = StringUtils.getSetMethodNameByFieldName(propertyName);
+                Method[] methods = clazz.getMethods();
+                for (Method method : methods) {
+                    if (method.getName().equals(methodName)) {
+                        method.invoke(beanObj, bean);
+                    }
+                }
+
+            }
+            if (value != null && !"".equals(value)) {
+                String methodName = StringUtils.getSetMethodNameByFieldName(propertyName);
+                Method method = clazz.getMethod(methodName, String.class);
+                method.invoke(beanObj, value);
+            }
+        }
+
+        //在返回之前将该对象存储到bean容器中
+        singleObjects.put(name, beanObj);
+        return beanObj;
+    }
+
+    @Override
+    public <T> T getBean(String name, Class<? extends T> clazz) throws Exception {
+        Object bean = getBean(name);
+        if (bean == null) {
+            return null;
+        }
+        return clazz.cast(bean);
+    }
+}
+```
+
+
+
+#### 5. 补充
+
+pom.xml
+
+```xml
+<!-- dom4j -->
+<dependency>
+    <groupId>dom4j</groupId>
+    <artifactId>dom4j</artifactId>
+    <version>1.6.1</version>
+</dependency>
+```
+
+
+
+项目结构：
+
+![自定义spring-context项目结构](static/设计模式/自定义spring-context项目结构.png)
